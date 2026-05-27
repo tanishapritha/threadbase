@@ -9,9 +9,20 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.4.1",
+    "@supabase/supabase-js": "^2.106.2",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.3.0",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "stripe": "^22.1.1",
+    "tailwind-merge": "^3.6.0",
+    "trigger.dev": "^4.4.6",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
