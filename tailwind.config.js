@@ -10,11 +10,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        background: '#0a0a0a',
+        foreground: '#ededed',
         primary: 'hsl(210, 40%, 55%)',
         secondary: 'hsl(210, 30%, 25%)',
         accent: 'hsl(210, 50%, 65%)',
-        surface: 'hsl(210, 35%, 15%)',
-        glass: 'rgba(255,255,255,0.07)',
+        surface: '#111111',
+        border: '#222222',
+        glass: 'rgba(255,255,255,0.05)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

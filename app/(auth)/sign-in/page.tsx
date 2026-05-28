@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0d1117] p-6">
+    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] p-6">
       <div className="w-full max-w-md space-y-6 text-center">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-white">

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.1",
+    "@clerk/themes": "^2.4.57",
     "@supabase/supabase-js": "^2.106.2",
     "@trigger.dev/sdk": "^4.4.6",
     "clsx": "^2.1.1",

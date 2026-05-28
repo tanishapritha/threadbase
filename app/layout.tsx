@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
@@ -28,6 +29,9 @@ export default function RootLayout({
       <ClerkProvider
         publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
         afterSignOutUrl="/"
+        appearance={{
+          baseTheme: dark,
+        }}
       >
         <body className="min-h-full font-sans">
           {children}

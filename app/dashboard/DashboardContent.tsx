@@ -1,3 +1,4 @@
+// app/dashboard/DashboardContent.tsx
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
@@ -14,7 +15,11 @@ interface Post {
   createdAt: string;
 }
 
-function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" | "posted" }) {
+export default function DashboardContent({
+  initialTab,
+}: {
+  initialTab?: "drafts" | "scheduled" | "posted";
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -23,7 +28,9 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "drafts" | "scheduled">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "drafts" | "scheduled" | "posted">(
+    initialTab ? initialTab : "all"
+  );
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -52,6 +59,7 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
   const filteredPosts = posts.filter((p) => {
     if (activeTab === "drafts") return p.status === "draft";
     if (activeTab === "scheduled") return p.status === "scheduled";
+    if (activeTab === "posted") return p.status === "posted";
     return true;
   });
 
@@ -74,27 +82,36 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
 
   const statusLabel = (status: string) => {
     switch (status) {
-      case "draft": return "Draft";
-      case "scheduled": return "Scheduled";
-      case "posted": return "Posted";
-      case "failed": return "Failed";
-      default: return status;
+      case "draft":
+        return "Draft";
+      case "scheduled":
+        return "Scheduled";
+      case "posted":
+        return "Posted";
+      case "failed":
+        return "Failed";
+      default:
+        return status;
     }
   };
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "draft": return "text-white/40 bg-white/5 border border-white/10";
-      case "scheduled": return "text-blue-400 bg-blue-500/10 border border-blue-500/20";
-      case "posted": return "text-green-400 bg-green-500/10 border border-green-500/20";
-      case "failed": return "text-red-400 bg-red-500/10 border border-red-500/20";
-      default: return "text-white/40 bg-white/5 border border-white/10";
+      case "draft":
+        return "text-white/40 bg-white/5 border border-white/10";
+      case "scheduled":
+        return "text-blue-400 bg-blue-500/10 border border-blue-500/20";
+      case "posted":
+        return "text-green-400 bg-green-500/10 border border-green-500/20";
+      case "failed":
+        return "text-red-400 bg-red-500/10 border border-red-500/20";
+      default:
+        return "text-white/40 bg-white/5 border border-white/10";
     }
   };
 
   return (
     <div className="text-white font-sans animate-fade-up">
-      {/* ── WELCOME BANNER ───────────────────────────────────── */}
       {showWelcome && !welcomeDismissed && (
         <div className="mb-8 bg-white/5 border border-[hsl(210,50%,30%)] rounded-xl p-4 flex items-start justify-between gap-4 shadow-lg shadow-[hsl(210,50%,30%)]/10">
           <div>
@@ -116,50 +133,16 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
         </div>
       )}
 
-      {/* ── 2-COLUMN LAYOUT ──────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:gap-12">
-        {/* ── LEFT SIDEBAR: HEADER + STATS ──────────────────── */}
-        <div className="lg:w-[280px] shrink-0 mb-8 lg:mb-0">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-              Dashboard
-            </h1>
-            <p className="text-sm text-white/50">
-              {user ? `Welcome back, ${user.firstName || "Creator"}.` : "Loading..."} <br />
-              {posts.length} post{posts.length !== 1 ? "s" : ""} in your workspace.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="space-y-3">
-            {([{ label: "Drafts", count: posts.filter((p) => p.status === "draft").length, color: "text-white" }, { label: "Scheduled", count: posts.filter((p) => p.status === "scheduled").length, color: "text-[hsl(210,50%,65%)]" }, { label: "Posted", count: posts.filter((p) => p.status === "posted").length, color: "text-green-400" }] as const).map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-[#111] border border-white/10 rounded-xl px-5 py-4 flex items-center justify-between shadow-sm"
-              >
-                <p className="text-sm text-white/50 font-medium">{stat.label}</p>
-                <p className={`text-xl font-bold tracking-tight ${stat.color}`}>
-                  {stat.count}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* New post button */}
-          <Link
-            href="/dashboard/compose"
-            className="mt-6 w-full h-11 flex items-center justify-center text-sm rounded-lg bg-white text-black hover:bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all font-medium gap-2"
-          >
-            <span>✨</span> New post
-          </Link>
-        </div>
-
-        {/* ── RIGHT MAIN CONTENT: TABS + POSTS ─────────────── */}
+        {/* LEFT SIDEBAR is handled in layout */}
         <div className="flex-1 min-w-0">
-          {/* Tabs */}
           <div className="flex items-center gap-6 mb-6 border-b border-white/10 px-1">
-            {([{ key: "all" as const, label: "All posts" }, { key: "drafts" as const, label: "Drafts" }, { key: "scheduled" as const, label: "Scheduled" }]).map((tab) => (
+            {([
+              { key: "all" as const, label: "All posts" },
+              { key: "drafts" as const, label: "Drafts" },
+              { key: "scheduled" as const, label: "Scheduled" },
+              { key: "posted" as const, label: "Posted" },
+            ]).map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -174,7 +157,6 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
             ))}
           </div>
 
-          {/* Posts list */}
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
@@ -194,7 +176,9 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
                   ? "No posts yet. Start drafting your first thread!"
                   : activeTab === "drafts"
                   ? "Your drafts folder is empty."
-                  : "No scheduled posts in the queue."}
+                  : activeTab === "scheduled"
+                  ? "No scheduled posts in the queue."
+                  : "No posted items found."}
               </p>
               <Link
                 href="/dashboard/compose"
@@ -255,19 +239,5 @@ function DashboardContent({ initialTab }: { initialTab?: "drafts" | "scheduled" 
         </div>
       </div>
     </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="h-full flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-white/10 border-t-white rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <DashboardContent />
-    </Suspense>
   );
 }

@@ -39,7 +39,7 @@ export default function ComposePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6 font-sans">
+    <div className="text-white font-sans animate-fade-up">
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Compose</h1>
