@@ -17,8 +17,12 @@ interface Post {
 
 export default function DashboardContent({
   initialTab,
+  title,
+  children,
 }: {
   initialTab?: "drafts" | "scheduled" | "posted";
+  title?: string;
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -135,6 +139,8 @@ export default function DashboardContent({
 
       <div className="flex flex-col lg:flex-row lg:gap-12">
         {/* LEFT SIDEBAR is handled in layout */}
+        {title && <h2 className="text-2xl font-bold mb-4 text-white">{title}</h2>}
+        {children}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-6 mb-6 border-b border-white/10 px-1">
             {([

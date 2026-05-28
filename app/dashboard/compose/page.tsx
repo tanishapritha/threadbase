@@ -7,7 +7,10 @@ export default function ComposePage() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<'twitter' | 'linkedin'>('twitter');
-
+  const [rawIdea, setRawIdea] = useState('');
+  const [tone, setTone] = useState('Friendly');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [formattedContent, setFormattedContent] = useState<any>(null);
   // Simple typewriter effect component
   function Typewriter({ text }: { text: string }) {
     const [display, setDisplay] = useState('');

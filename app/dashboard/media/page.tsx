@@ -1,3 +1,4 @@
+"use client";
 import DashboardContent from '@/components/DashboardContent';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -16,8 +17,9 @@ export default function MediaPage() {
     if (error) {
       console.error('Upload error', error);
     } else {
-      const publicUrl = supabase.storage.from('media').getPublicUrl(data.path).publicURL;
-      setUrl(publicUrl);
+        const { data: publicData } = supabase.storage.from('media').getPublicUrl(data.path);
+        const publicUrl = publicData.publicUrl;
+        setUrl(publicUrl);
     }
     setUploading(false);
   };
