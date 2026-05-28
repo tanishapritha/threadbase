@@ -1,23 +1,18 @@
-import { triggerClient } from '@/lib/trigger';
-import { db } from '@/lib/db';
-import { eq } from 'drizzle-orm';
-import { posts, postPlatforms, connectedAccounts } from '@/lib/db/schema';
-import { json } from 'drizzle-orm/pg-core';
+import { task } from "@trigger.dev/sdk/v3";
+import { db } from "@/lib/db";
+import { eq, and } from "drizzle-orm";
+import { posts, postPlatforms, connectedAccounts } from "@/lib/db/schema";
 
 /**
  * Schedule‑post task – runs at the scheduled time.
  * Payload: { postId: string, scheduledAt: string }
  */
-export const schedulePost = triggerClient.defineTask({
-  id: 'schedule-post',
-  name: 'Schedule Post',
-  version: '0.1',
-  trigger: triggerClient.schedule('run-at', {
-    // The trigger time is supplied in the payload (ISO string)
-    at: (payload) => new Date(payload.scheduledAt),
-  }),
-  async run(payload) {
-    const { postId } = payload as { postId: string };
+export const schedulePost = task({
+  id: "schedule-post",
+  maxDuration: 300,
+  run: async (payload: { postId: string; scheduledAt: string }) => {
+    const { postId } = payload;
+
     // Fetch post with its workspace and formatted content
     const post = await db
       .select()
@@ -27,7 +22,7 @@ export const schedulePost = triggerClient.defineTask({
       .then((rows) => rows[0]);
 
     if (!post) throw new Error(`Post ${postId} not found`);
-    if (post.status !== 'scheduled') return; // nothing to do
+    if (post.status !== "scheduled") return; // nothing to do
 
     // Load connected accounts for the workspace
     const accounts = await db
@@ -38,7 +33,7 @@ export const schedulePost = triggerClient.defineTask({
     const platforms = post.formattedContent ?? {};
     const results: Record<string, boolean> = {};
 
-    for (const platform of Object.keys(platforms) as Array<'twitter' | 'linkedin'>) {
+    for (const platform of Object.keys(platforms) as Array<"twitter" | "linkedin">) {
       const account = accounts.find((a) => a.platform === platform);
       if (!account) {
         results[platform] = false;
@@ -49,10 +44,10 @@ export const schedulePost = triggerClient.defineTask({
       try {
         // Placeholder publish call – replace with real SDK / API later
         const resp = await fetch(`https://api.${platform}.com/v2/post`, {
-          method: 'POST',
+          method: "POST",
           headers: {
             Authorization: `Bearer ${account.accessToken}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ content }),
         });
@@ -62,12 +57,16 @@ export const schedulePost = triggerClient.defineTask({
         await db
           .update(postPlatforms)
           .set({
-            status: 'posted',
+            status: "posted",
             postedAt: new Date(),
             externalId: data.id,
           })
-          .where(eq(postPlatforms.postId, postId))
-          .where(eq(postPlatforms.platform, platform));
+          .where(
+            and(
+              eq(postPlatforms.postId, postId),
+              eq(postPlatforms.platform, platform)
+            )
+          );
         results[platform] = true;
       } catch (e) {
         console.error(`Error publishing to ${platform}:`, e);
@@ -80,13 +79,9 @@ export const schedulePost = triggerClient.defineTask({
     await db
       .update(posts)
       .set({
-        status: allSuccess ? 'posted' : 'failed',
+        status: allSuccess ? "posted" : "failed",
         postedAt: allSuccess ? new Date() : undefined,
       })
       .where(eq(posts.id, postId));
-  },
-  retries: {
-    attempts: 3,
-    delay: '5 minutes',
   },
 });

@@ -21,6 +21,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`}>
       <ClerkProvider
         publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+        afterSignOutUrl="/"
       >
         <body className="min-h-full font-sans">
           {children}

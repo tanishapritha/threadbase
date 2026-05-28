@@ -24,6 +24,7 @@
     "react-swipeable": "^7.0.2",
     "shadcn-ui": "^0.9.5",
     "stripe": "^22.1.1",
+    "svix": "^1.94.0",
     "tailwind-merge": "^3.6.0",
     "trigger.dev": "^4.4.6",
     "zod": "^4.4.3"

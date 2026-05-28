@@ -17,7 +17,7 @@ export default function SignInPage() {
         <SignIn
           routing="hash"
           signUpUrl="/sign-up"
-          afterSignInUrl="/dashboard"
+          fallbackRedirectUrl="/dashboard"
           appearance={{
             elements: {
               rootBox: "mx-auto w-full",
