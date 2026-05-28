@@ -106,25 +106,41 @@ ${selectedPlatforms.includes("twitter") ? `{ "twitter": "...", "linkedin": ${sel
         "X-Title": "ThreadBase",
       },
       body: JSON.stringify({
-        model: "anthropic/claude-sonnet-4",
+        model: "openai/gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: rawIdea.trim() },
         ],
-        max_tokens: 2048,
+        max_tokens: 600,
         stream: true,
       }),
     });
 
     if (!response.ok) {
-      const errBody = await response.text().catch(() => "");
-      console.error("[PREVIEW] OpenRouter error:", errBody);
+      const errText = await response.text().catch(() => "");
+      if (response.status === 502) {
+        // Likely quota exhausted or server error – inform client
+        console.error("[PREVIEW] OpenRouter 502 error (quota or server):", errText);
+        return NextResponse.json({ error: "AI service unavailable (quota exhausted or server error). Please try again later." }, { status: 502 });
+      }
+      if (response.status === 429) {
+        // Forward rate limit info
+        return NextResponse.json({ error: "Rate limit exceeded", details: errText }, { status: 429 });
+      }
+      console.error("[PREVIEW] OpenRouter error:", errText);
       return NextResponse.json({ error: "AI generation failed" }, { status: 502 });
     }
 
+
     // Stream the OpenRouter response to the client as NDJSON
     const encoder = new TextEncoder();
-    const openRouterStream = response.body!;
+    // Ensure we have a readable stream from OpenRouter
+    if (!response.body) {
+      console.error("[PREVIEW] OpenRouter returned no body stream");
+      return NextResponse.json({ error: "AI generation failed (no stream)" }, { status: 502 });
+    }
+    const openRouterStream = response.body!; // now safe
+
     const reader = openRouterStream.getReader();
     const decoder = new TextDecoder();
 
@@ -179,8 +195,8 @@ ${selectedPlatforms.includes("twitter") ? `{ "twitter": "...", "linkedin": ${sel
         "X-RateLimit-Remaining": String(remaining),
       },
     });
-  } catch (error: any) {
-    console.error("[PREVIEW]", error);
-    return NextResponse.json({ error: error.message || "Internal error" }, { status: 500 });
+  } catch (err) {
+    console.error('[PREVIEW] Unexpected error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

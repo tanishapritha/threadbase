@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useClerk } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,10 +28,67 @@ const POST_TYPES: PostType[] = ["Tip", "Thread", "Story", "Opinion", "Question"]
 const FORMAT_TOOLTIP_TEXT =
   "Tip is punchy and short. Thread splits into tweets. Story is first-person. Opinion is bold. Question sparks replies.";
 
+// ── Helpers for parsing partial JSON during stream ─────────────────────────────
+
+function extractPartialString(str: string, key: string): string {
+  const keyIndex = str.indexOf(`"${key}"`);
+  if (keyIndex === -1) return "";
+  
+  const colonIndex = str.indexOf(":", keyIndex + key.length + 2);
+  if (colonIndex === -1) return "";
+  
+  const startQuoteIndex = str.indexOf('"', colonIndex + 1);
+  if (startQuoteIndex === -1) return "";
+  
+  let result = "";
+  let escaped = false;
+  for (let i = startQuoteIndex + 1; i < str.length; i++) {
+    const char = str[i];
+    if (escaped) {
+      if (char === "n") {
+        result += "\n";
+      } else if (char === "t") {
+        result += "\t";
+      } else {
+        result += char;
+      }
+      escaped = false;
+    } else if (char === "\\") {
+      escaped = true;
+    } else if (char === '"') {
+      break;
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+function extractPartialNumber(str: string, key: string): number {
+  const keyIndex = str.indexOf(`"${key}"`);
+  if (keyIndex === -1) return 0;
+  
+  const colonIndex = str.indexOf(":", keyIndex + key.length + 2);
+  if (colonIndex === -1) return 0;
+  
+  let numStr = "";
+  for (let i = colonIndex + 1; i < str.length; i++) {
+    const char = str[i];
+    if (/\d/.test(char)) {
+      numStr += char;
+    } else if (numStr.length > 0) {
+      break;
+    }
+  }
+  return numStr ? parseInt(numStr, 10) : 0;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
+
 
 export default function QuickCompose() {
   const { openSignUp } = useClerk();
+  const { isSignedIn } = useUser();
 
   // Compose state
   const [rawIdea, setRawIdea] = useState("");
@@ -50,6 +107,7 @@ export default function QuickCompose() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
 
   // Refs
@@ -98,7 +156,8 @@ export default function QuickCompose() {
     }
 
     setIsGenerating(true);
-    setPreview(null);
+    setErrorMessage(null);
+    setPreview({ twitter: "", linkedin: "", twitterCharCount: 0 });
     setAccumulated("");
     setIsEditing(false);
     setSaveSuccess(false);
@@ -129,7 +188,12 @@ export default function QuickCompose() {
       }
 
       if (!res.ok) {
-        throw new Error(`Generation failed (${res.status})`);
+        const errText = await res.text();
+        setErrorMessage(`Generation failed (${res.status}): ${errText}`);
+        // Fallback: clear preview to avoid stale UI
+        setPreview({ twitter: "", linkedin: "", twitterCharCount: 0 });
+        setIsGenerating(false);
+        return;
       }
 
       const reader = res.body!.getReader();
@@ -151,26 +215,29 @@ export default function QuickCompose() {
             if (event.type === "delta" && event.content) {
               fullContent += event.content;
               setAccumulated(fullContent);
+              
+              const twitterVal = extractPartialString(fullContent, "twitter");
+              const linkedinVal = extractPartialString(fullContent, "linkedin");
+              const twCharCount = extractPartialNumber(fullContent, "twitterCharCount") || twitterVal.length;
+
+              setPreview({
+                twitter: twitterVal,
+                linkedin: linkedinVal,
+                twitterCharCount: twCharCount,
+              });
             } else if (event.type === "done") {
-              // Parse the accumulated JSON
+              // Parse final full accumulated JSON
               try {
                 const parsed: PreviewContent = JSON.parse(fullContent);
                 setPreview(parsed);
-                setGenerationCount((c) => c + 1);
-
-                // Show sign-in prompt after first generation
-                if (generationCount === 0) {
-                  setShowSignInPrompt(true);
-                }
               } catch {
-                // JSON parse failed — try to extract from raw text
-                // Fallback: treat accumulated as-is
-                setPreview({
-                  twitter: fullContent.includes("twitter") ? fullContent : "",
-                  linkedin: fullContent.includes("linkedin") ? fullContent : "",
-                  twitterCharCount: 0,
-                });
-                setGenerationCount((c) => c + 1);
+                // Keep extracted preview
+              }
+              setGenerationCount((c) => c + 1);
+
+              // Show sign-in prompt after first generation
+              if (generationCount === 0) {
+                setShowSignInPrompt(true);
               }
             } else if (event.type === "error") {
               console.error("[Stream error]", event.message);
@@ -208,20 +275,51 @@ export default function QuickCompose() {
   };
 
   // ── Save to workspace ───────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!preview) return;
 
-    const pending = JSON.stringify({
-      rawIdea: rawIdea.trim(),
-      postType,
-      twitterContent: preview.twitter,
-      linkedinContent: preview.linkedin,
-      twitterCharCount: preview.twitterCharCount,
-      platforms,
-    });
+    if (isSignedIn) {
+      setIsSaving(true);
+      try {
+        const res = await fetch("/api/posts/save-pending", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rawIdea: rawIdea.trim(),
+            postType,
+            twitterContent: preview.twitter,
+            linkedinContent: preview.linkedin,
+            platforms,
+          }),
+        });
 
-    sessionStorage.setItem("tb_pending_post", pending);
-    openSignUp({ forceRedirectUrl: "/dashboard?welcome=1" });
+        if (res.ok) {
+          setSaveSuccess(true);
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 1000);
+        } else {
+          const errText = await res.text();
+          setErrorMessage(`Save failed: ${errText}`);
+        }
+      } catch (err: any) {
+        setErrorMessage(`Save failed: ${err.message || err}`);
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      const pending = JSON.stringify({
+        rawIdea: rawIdea.trim(),
+        postType,
+        twitterContent: preview.twitter,
+        linkedinContent: preview.linkedin,
+        twitterCharCount: preview.twitterCharCount,
+        platforms,
+      });
+
+      sessionStorage.setItem("tb_pending_post", pending);
+      openSignUp({ forceRedirectUrl: "/dashboard?welcome=1" });
+    }
   };
 
   // ── Char count colour ─────────────────────────────────────────────────────
@@ -297,6 +395,11 @@ export default function QuickCompose() {
             disabled={isGenerating}
           />
         </div>
+        {errorMessage && (
+          <div className="px-4 text-sm text-red-600">
+            {errorMessage}
+          </div>
+        )}
 
         {/* Divider */}
         <div className="h-px bg-[#E5E7EB]" />
@@ -412,117 +515,118 @@ export default function QuickCompose() {
       )}
 
       {/* ── PREVIEW SECTION ───────────────────────────────────────────── */}
-      {(isGenerating || preview) && (
+      {preview && (
         <div ref={previewRef} className="w-full mt-8 animate-fade-up">
-          {/* LOADING SHIMMER */}
-          {isGenerating && (
-            <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 space-y-3">
-              <div className="flex gap-6 mb-4">
-                <div className="w-16 h-5 bg-gray-100 rounded animate-shimmer-pulse" />
-                <div className="w-20 h-5 bg-gray-100 rounded animate-shimmer-pulse" />
-              </div>
-              <div className="h-4 bg-gray-100 rounded animate-shimmer-pulse w-full" />
-              <div className="h-4 bg-gray-100 rounded animate-shimmer-pulse w-3/4" />
-              <div className="h-4 bg-gray-100 rounded animate-shimmer-pulse w-5/6" />
-            </div>
-          )}
-
           {/* PREVIEW CARD */}
-          {preview && !isGenerating && (
-            <div className="bg-white border border-[#E5E7EB] rounded-xl">
-              {/* Tabs */}
-              <div className="flex border-b border-[#E5E7EB]">
-                <button
-                  onClick={() => setActiveTab("twitter")}
-                  className={`px-4 py-2.5 text-[13px] font-[500] border-b-2 transition-colors ${
-                    activeTab === "twitter"
-                      ? "border-[#111] text-gray-900"
-                      : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  Twitter
-                </button>
-                <button
-                  onClick={() => setActiveTab("linkedin")}
-                  className={`px-4 py-2.5 text-[13px] font-[500] border-b-2 transition-colors ${
-                    activeTab === "linkedin"
-                      ? "border-[#111] text-gray-900"
-                      : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  LinkedIn
-                </button>
+          <div className="bg-white border border-[#E5E7EB] rounded-xl relative overflow-hidden">
+            {/* Top progress line when generating */}
+            {isGenerating && (
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gray-100 overflow-hidden">
+                <div className="h-full bg-black animate-pulse w-full" />
               </div>
+            )}
 
-              {/* Content */}
-              <div className="p-4">
-                {isEditing ? (
-                  <div
-                    ref={editRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    className="text-[14px] leading-[1.75] text-gray-900 outline-none ring-1 ring-[#E5E7EB] rounded-md p-3 -mx-1 focus:ring-gray-400 transition-shadow"
-                    onBlur={(e) => {
-                      const text = e.currentTarget.textContent || "";
-                      if (activeTab === "twitter") {
-                        setPreview({ ...preview, twitter: text, twitterCharCount: text.length });
-                      } else {
-                        setPreview({ ...preview, linkedin: text });
-                      }
-                    }}
-                  >
-                    {currentTabContent}
-                  </div>
-                ) : (
-                  <p className="text-[14px] leading-[1.75] text-gray-900 whitespace-pre-wrap">
-                    {currentTabContent}
-                  </p>
-                )}
-
-                {/* Twitter char count */}
-                {activeTab === "twitter" && (
-                  <p className={`mt-2 text-right text-[12px] ${charCountColor(twitterCount)}`}>
-                    {twitterCount}
-                    <span className="text-gray-300">/280</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between px-4 py-3 border-t border-[#E5E7EB]">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleRegenerate}
-                    className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors font-[500]"
-                  >
-                    Regenerate
-                  </button>
-                  <button
-                    onClick={handleEdit}
-                    className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors font-[500]"
-                  >
-                    {isEditing ? "Done" : "Edit"}
-                  </button>
-                </div>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="min-h-[44px] sm:h-[30px] px-4 text-[12px] rounded-[6px] bg-[#111] text-white hover:bg-[#222] transition-colors font-[500] disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {isSaving ? (
-                    <>
-                      <span className="w-3 h-3 rounded-full border border-white border-t-transparent animate-spin" />
-                      Saving&hellip;
-                    </>
-                  ) : saveSuccess ? (
-                    "\u2713 Saved"
-                  ) : (
-                    "Save to workspace \u2192"
-                  )}
-                </button>
-              </div>
+            {/* Tabs */}
+            <div className="flex border-b border-[#E5E7EB]">
+              <button
+                onClick={() => setActiveTab("twitter")}
+                className={`px-4 py-2.5 text-[13px] font-[500] border-b-2 transition-colors ${
+                  activeTab === "twitter"
+                    ? "border-[#111] text-gray-900"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Twitter
+              </button>
+              <button
+                onClick={() => setActiveTab("linkedin")}
+                className={`px-4 py-2.5 text-[13px] font-[500] border-b-2 transition-colors ${
+                  activeTab === "linkedin"
+                    ? "border-[#111] text-gray-900"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                LinkedIn
+              </button>
             </div>
-          )}
+
+            {/* Content */}
+            <div className="p-4">
+              {isEditing ? (
+                <div
+                  ref={editRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="text-[14px] leading-[1.75] text-gray-900 outline-none ring-1 ring-[#E5E7EB] rounded-md p-3 -mx-1 focus:ring-gray-400 transition-shadow"
+                  onBlur={(e) => {
+                    const text = e.currentTarget.textContent || "";
+                    if (activeTab === "twitter") {
+                      setPreview({ ...preview, twitter: text, twitterCharCount: text.length });
+                    } else {
+                      setPreview({ ...preview, linkedin: text });
+                    }
+                  }}
+                >
+                  {currentTabContent}
+                </div>
+              ) : (
+                <p className="text-[14px] leading-[1.75] text-gray-900 whitespace-pre-wrap">
+                  {currentTabContent || (isGenerating ? "" : "No content generated")}
+                  {isGenerating && (
+                    <span className="inline-block w-1.5 h-4 ml-0.5 bg-gray-800 animate-pulse align-middle" />
+                  )}
+                </p>
+              )}
+
+              {/* Twitter char count */}
+              {activeTab === "twitter" && (
+                <p className={`mt-2 text-right text-[12px] ${charCountColor(twitterCount)}`}>
+                  {twitterCount}
+                  <span className="text-gray-300">/280</span>
+                </p>
+              )}
+
+              {errorMessage && (
+                <div className="mt-4 text-sm text-red-600">{errorMessage}</div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#E5E7EB]">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleRegenerate}
+                  disabled={isGenerating}
+                  className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors font-[500] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Regenerate
+                </button>
+                <button
+                  onClick={handleEdit}
+                  disabled={isGenerating}
+                  className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors font-[500] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isEditing ? "Done" : "Edit"}
+                </button>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={isSaving || isGenerating}
+                className="min-h-[44px] sm:h-[30px] px-4 text-[12px] rounded-[6px] bg-[#111] text-white hover:bg-[#222] transition-colors font-[500] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {isSaving ? (
+                  <>
+                    <span className="w-3 h-3 rounded-full border border-white border-t-transparent animate-spin" />
+                    Saving&hellip;
+                  </>
+                ) : saveSuccess ? (
+                  "\u2713 Saved"
+                ) : (
+                  "Save to workspace \u2192"
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* ── POST-GENERATION NUDGE (Bubble C) ────────────────────────── */}
           {preview && !isGenerating && (() => {
