@@ -8,12 +8,12 @@ export const metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-[#F9FAFB] text-gray-900 font-sans">
       {/* ── NAV ─────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-40 bg-white border-b border-gray-100">
-        <div className="max-w-[640px] mx-auto flex items-center justify-between h-[52px] px-4 sm:px-0">
+      <nav className="fixed top-0 inset-x-0 z-40 bg-white border-b border-[#E5E7EB]">
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between h-[52px] px-6 md:px-12">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span className="w-5 h-5 rounded bg-[#111]" />
             <span className="text-[15px] font-[500] tracking-tight text-gray-900">
               Threadbase
@@ -40,29 +40,31 @@ export default function LandingPage() {
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <main className="pt-[52px]">
-        <section className="px-2 sm:px-4 pb-16 pt-[72px] flex flex-col items-center">
-          {/* Headline */}
-          <h1 className="text-[28px] sm:text-[32px] font-[500] tracking-[-0.02em] text-gray-900 text-center leading-tight">
-            Turn ideas into posts.
-            <br />
-            Automatically.
-          </h1>
+        <section className="w-full max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-20">
+          {/* Asymmetric 2-column layout on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-16">
+            {/* Left column: headline text */}
+            <div className="lg:w-[38%] lg:sticky lg:top-[100px] shrink-0 mb-8 lg:mb-0">
+              <h1 className="font-serif text-[32px] sm:text-[38px] md:text-[42px] font-[500] tracking-[-0.01em] leading-[1.2] text-gray-900">
+                Turn ideas into posts.
+                <br />
+                Automatically.
+              </h1>
 
-          {/* Subheader */}
-          <p className="mt-2 text-[14px] text-gray-400 text-center max-w-md leading-relaxed font-[400]">
-            Write for Twitter and LinkedIn. AI that sounds like you.
-            <br />
-            Review before it posts.
-          </p>
+              <p className="mt-4 text-[14px] text-gray-400 leading-relaxed max-w-sm font-[400]">
+                Write for Twitter and LinkedIn. AI that sounds like you. Review before it posts.
+              </p>
+            </div>
 
-          {/* Spacer */}
-          <div className="mt-[36px] w-full flex justify-center">
-            <QuickCompose />
+            {/* Right column: compose card */}
+            <div className="lg:w-[56%] min-w-0">
+              <QuickCompose />
+            </div>
           </div>
         </section>
 
         {/* ── FOOTER ────────────────────────────────────────────── */}
-        <footer className="px-2 sm:px-4 pb-8 text-center">
+        <footer className="w-full max-w-7xl mx-auto px-6 md:px-12 pb-10 text-center">
           <p className="text-[11px] text-gray-300 font-[400]">
             &copy; {new Date().getFullYear()} Threadbase.
           </p>

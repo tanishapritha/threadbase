@@ -272,7 +272,7 @@ export default function QuickCompose() {
   return (
     <>
       {/* ── COMPOSE CARD ──────────────────────────────────────────────── */}
-      <div className="w-full max-w-[560px] bg-white border border-gray-200/80 rounded-xl animate-fade-up sm:mx-auto">
+      <div className="w-full bg-white border border-[#E5E7EB] rounded-xl animate-fade-up">
         {/* Hint text */}
         <div className="px-4 pt-3 pb-0">
           <p
@@ -293,74 +293,76 @@ export default function QuickCompose() {
             onKeyDown={handleKeyDown}
             placeholder="What&rsquo;s on your mind? A thought, a link, bullet points&hellip;"
             rows={3}
-            className="w-full resize-none bg-transparent text-[14px] leading-[1.7] text-[#111] placeholder:text-gray-300 outline-none min-h-[88px] max-h-[240px] font-sans font-[400]"
+            className="w-full resize-none bg-white text-[14px] leading-[1.7] text-[#111] placeholder:text-gray-300 outline-none min-h-[88px] max-h-[240px] font-sans font-[400] inset-shadow-input rounded-md px-3 py-2.5 border border-[#E5E7EB]/60 focus:border-[#d1d5db] transition-colors"
             disabled={isGenerating}
           />
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-gray-100" />
+        <div className="h-px bg-[#E5E7EB]" />
 
         {/* Format row */}
         <div className="px-4 py-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-[11px] uppercase tracking-[0.08em] text-gray-400 font-[500]">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-gray-400 font-[500] shrink-0">
               Format
             </span>
-            {POST_TYPES.map((t) => (
-              <button
-                key={t}
-                onClick={() => {
-                  setPostType(t);
-                  dismissTooltip();
-                }}
-                onMouseEnter={(e) => {
-                  // Show tooltip on first hover
-                  const seen = localStorage.getItem("tb_fmt_tooltip_seen");
-                  if (!seen) showFormatTooltip();
-                }}
-                className={`text-[12px] min-h-[44px] sm:h-[26px] px-3 rounded-[4px] border transition-colors font-[400] ${
-                  postType === t
-                    ? "bg-[#111] text-white border-[#111]"
-                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+            <div className="flex flex-wrap gap-2">
+              {POST_TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => {
+                    setPostType(t);
+                    dismissTooltip();
+                  }}
+                  onMouseEnter={(e) => {
+                    // Show tooltip on first hover
+                    const seen = localStorage.getItem("tb_fmt_tooltip_seen");
+                    if (!seen) showFormatTooltip();
+                  }}
+                  className={`text-[12px] min-h-[44px] sm:h-[28px] px-3 rounded-[4px] border transition-all duration-150 font-[500] ${
+                    postType === t
+                      ? "bg-[#111] text-white border-[#111]"
+                      : "bg-white text-gray-400 border-[#E5E7EB] hover:border-gray-300 hover:text-gray-700"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Format tooltip (inline text) */}
           {showFmtTooltip && (
-            <p className="mt-2 text-[11px] text-gray-400 leading-relaxed animate-fade-up">
+            <p className="mt-2.5 text-[11px] text-gray-400 leading-relaxed animate-fade-up">
               {FORMAT_TOOLTIP_TEXT}
             </p>
           )}
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-gray-100" />
+        <div className="h-px bg-[#E5E7EB]" />
 
         {/* Platform toggles + Generate */}
         <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Platform toggles */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => togglePlatform("twitter")}
-              className={`min-h-[44px] sm:h-[28px] px-3 text-[12px] rounded-[4px] border transition-colors font-[500] ${
+              className={`min-h-[44px] sm:h-[28px] px-3 text-[12px] rounded-[4px] border transition-all duration-150 font-[500] ${
                 platforms.includes("twitter")
-                  ? "bg-blue-50 border-blue-200 text-[#1d9bf0]"
-                  : "bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"
+                  ? "bg-[#111] text-white border-[#111]"
+                  : "bg-white text-gray-400 border-[#E5E7EB] hover:text-gray-600 hover:border-gray-300"
               }`}
             >
               Twitter
             </button>
             <button
               onClick={() => togglePlatform("linkedin")}
-              className={`min-h-[44px] sm:h-[28px] px-3 text-[12px] rounded-[4px] border transition-colors font-[500] ${
+              className={`min-h-[44px] sm:h-[28px] px-3 text-[12px] rounded-[4px] border transition-all duration-150 font-[500] ${
                 platforms.includes("linkedin")
-                  ? "bg-slate-50 border-slate-200 text-[#0a66c2]"
-                  : "bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"
+                  ? "bg-[#111] text-white border-[#111]"
+                  : "bg-white text-gray-400 border-[#E5E7EB] hover:text-gray-600 hover:border-gray-300"
               }`}
             >
               LinkedIn
@@ -371,13 +373,13 @@ export default function QuickCompose() {
           <button
             onClick={handleGenerate}
             disabled={isGenerating || !rawIdea.trim() || isRateLimited}
-            className={`w-full sm:w-auto min-h-[44px] sm:h-[36px] px-4 sm:px-5 text-[13px] rounded-[6px] font-[500] transition-all flex items-center justify-center gap-2 ${
+            className={`w-full sm:w-auto min-h-[44px] sm:h-[36px] px-4 sm:px-5 text-[13px] rounded-[6px] font-[500] transition-all duration-150 flex items-center justify-center gap-2 ${
               isGenerating
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-[#E5E7EB]"
                 : generationCount >= 1
-                ? "bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                ? "bg-white text-gray-500 cursor-pointer hover:bg-gray-50 border border-[#E5E7EB]"
                 : isRateLimited
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-[#E5E7EB]"
                 : "bg-[#111] text-white hover:bg-[#222] active:bg-[#111]"
             }`}
           >
@@ -396,7 +398,7 @@ export default function QuickCompose() {
 
       {/* ── RATE LIMITED MESSAGE ──────────────────────────────────────── */}
       {isRateLimited && (
-        <div className="w-full max-w-[560px] mx-auto mt-4 text-center">
+        <div className="w-full mx-auto mt-4 text-center">
           <p className="text-[12px] text-gray-400">
             You&rsquo;ve tried 3 posts &mdash;{" "}
             <button
@@ -411,10 +413,10 @@ export default function QuickCompose() {
 
       {/* ── PREVIEW SECTION ───────────────────────────────────────────── */}
       {(isGenerating || preview) && (
-        <div ref={previewRef} className="w-full max-w-[560px] mx-auto mt-6 animate-fade-up">
+        <div ref={previewRef} className="w-full mt-8 animate-fade-up">
           {/* LOADING SHIMMER */}
           {isGenerating && (
-            <div className="bg-white border border-gray-200/80 rounded-xl p-4 space-y-3">
+            <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 space-y-3">
               <div className="flex gap-6 mb-4">
                 <div className="w-16 h-5 bg-gray-100 rounded animate-shimmer-pulse" />
                 <div className="w-20 h-5 bg-gray-100 rounded animate-shimmer-pulse" />
@@ -427,9 +429,9 @@ export default function QuickCompose() {
 
           {/* PREVIEW CARD */}
           {preview && !isGenerating && (
-            <div className="bg-white border border-gray-200/80 rounded-xl">
+            <div className="bg-white border border-[#E5E7EB] rounded-xl">
               {/* Tabs */}
-              <div className="flex border-b border-gray-100">
+              <div className="flex border-b border-[#E5E7EB]">
                 <button
                   onClick={() => setActiveTab("twitter")}
                   className={`px-4 py-2.5 text-[13px] font-[500] border-b-2 transition-colors ${
@@ -459,7 +461,7 @@ export default function QuickCompose() {
                     ref={editRef}
                     contentEditable
                     suppressContentEditableWarning
-                    className="text-[14px] leading-[1.75] text-gray-900 outline-none ring-1 ring-gray-200 rounded-md p-3 -mx-1 focus:ring-gray-400 transition-shadow"
+                    className="text-[14px] leading-[1.75] text-gray-900 outline-none ring-1 ring-[#E5E7EB] rounded-md p-3 -mx-1 focus:ring-gray-400 transition-shadow"
                     onBlur={(e) => {
                       const text = e.currentTarget.textContent || "";
                       if (activeTab === "twitter") {
@@ -487,7 +489,7 @@ export default function QuickCompose() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[#E5E7EB]">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleRegenerate}
@@ -528,7 +530,7 @@ export default function QuickCompose() {
             if (!seen) {
               setTimeout(() => localStorage.setItem("tb_gen_seen", "1"), 100);
               return (
-                <p className="mt-3 text-[12px] text-gray-400 leading-relaxed animate-fade-up">
+                <p className="mt-4 text-[12px] text-gray-400 leading-relaxed animate-fade-up">
                   Like it? Save it to your workspace and schedule it.{" "}
                   <button
                     onClick={handleSave}
@@ -554,7 +556,7 @@ export default function QuickCompose() {
           />
 
           {/* Modal */}
-          <div className="relative bg-white border border-gray-200 rounded-xl p-6 w-full max-w-sm shadow-xl animate-fade-up">
+          <div className="relative bg-white border border-[#E5E7EB] rounded-xl p-6 w-full max-w-sm animate-fade-up">
             <h3 className="text-[15px] font-[500] text-gray-900 mb-4">
               Sign in to continue
             </h3>
