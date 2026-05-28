@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         "X-Title": "ThreadBase",
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3.5-sonnet",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -41,6 +41,7 @@ Respond ONLY with a valid JSON object in the exact following format:
             content: rawIdea
           }
         ],
+        max_tokens: 1000,
         response_format: { type: "json_object" }
       }),
     });
