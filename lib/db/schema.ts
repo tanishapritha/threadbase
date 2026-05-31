@@ -1,15 +1,14 @@
-import { pgTable, uuid, text, varchar, timestamp, jsonb, boolean, pgEnum, serial, integer } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, varchar, timestamp, jsonb, boolean, pgEnum, integer } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 // Enums
 export const roleEnum = pgEnum('role', ['owner', 'member'] as const);
-export const postStatusEnum = pgEnum('post_status', ['draft', 'scheduled', 'posted', 'failed'] as const);
+export const postStatusEnum = pgEnum('post_status', ['draft', 'scheduled', 'posted', 'failed', 'email_sent'] as const);
 export const platformEnum = pgEnum('platform', ['twitter', 'linkedin'] as const);
 
-// Users table
+// Users table — id is the Clerk user ID (e.g. "user_abc123")
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-  clerkId: text('clerk_id').unique().notNull(),
+  id: text('id').primaryKey(), // Clerk user ID
   email: varchar('email', { length: 255 }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   avatarUrl: text('avatar_url'),
@@ -19,7 +18,7 @@ export const users = pgTable('users', {
 // Workspaces table
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-  ownerId: uuid('owner_id').notNull().references(() => users.id),
+  ownerId: text('owner_id').notNull().references(() => users.id),
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).unique().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -29,7 +28,7 @@ export const workspaces = pgTable('workspaces', {
 export const workspaceMembers = pgTable('workspace_members', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id),
-  userId: uuid('user_id').notNull().references(() => users.id),
+  userId: text('user_id').notNull().references(() => users.id),
   role: roleEnum('role').notNull(),
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
 });

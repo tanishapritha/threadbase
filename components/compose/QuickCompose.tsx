@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
+import { buildTwitterIntentUrl } from "@/lib/twitterIntent";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -625,7 +626,18 @@ export default function QuickCompose() {
                   "Save to workspace \u2192"
                 )}
               </button>
-            </div>
+                      <button
+            onClick={() => {
+              if (preview?.twitter) {
+                const url = buildTwitterIntentUrl(preview.twitter);
+                window.open(url, "_blank", "noopener,noreferrer");
+              }
+            }}
+            className="ml-2 min-h-[44px] sm:h-[30px] px-4 text-[12px] rounded-[6px] bg-[#1da1f2] text-white hover:bg-[#1a91da] transition-colors font-[500] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+          >
+            Post now!
+          </button>
+        </div>
           </div>
 
           {/* ── POST-GENERATION NUDGE (Bubble C) ────────────────────────── */}

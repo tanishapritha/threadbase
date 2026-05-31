@@ -1,6 +1,6 @@
 import QuickCompose from "@/components/compose/QuickCompose";
 import Link from "next/link";
-
+import { TwitterShareButton } from "./components/TwitterShareButton";
 export const metadata = {
   title: "ThreadBase — Turn ideas into posts.",
   description: "Write for Twitter and LinkedIn. AI that sounds like you. Review before it posts.",
@@ -88,6 +88,7 @@ export default function LandingPage() {
                 >
                   Start writing for free
                 </Link>
+                
                 <div className="flex items-center gap-4 text-white/40 text-sm font-medium">
                   <span className="flex items-center gap-2">
                     <TwitterIcon /> Twitter

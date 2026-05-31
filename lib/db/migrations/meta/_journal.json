@@ -8,6 +8,13 @@
       "when": 1779897625707,
       "tag": "0000_fixed_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1748563200000,
+      "tag": "0001_clerk_id_as_pk",
+      "breakpoints": true
     }
   ]
 }
