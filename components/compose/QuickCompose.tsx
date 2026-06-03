@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { buildTwitterIntentUrl } from "@/lib/twitterIntent";
 
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type PostType = "Tip" | "Thread" | "Story" | "Opinion" | "Question";
@@ -116,6 +117,7 @@ export default function QuickCompose() {
   const previewRef = useRef<HTMLDivElement>(null);
   const editRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const waitlistRef = useRef<HTMLDivElement>(null);
 
   // ── Auto-resize textarea ─────────────────────────────────────────────────
   const autoResize = useCallback(() => {
@@ -323,6 +325,20 @@ export default function QuickCompose() {
     }
   };
 
+  // Post now handler
+  const handlePostNow = () => {
+    if (preview?.twitter) {
+      const url = buildTwitterIntentUrl(preview.twitter);
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    setTimeout(() => {
+      const waitlistEl = document.getElementById("waitlist");
+      if (waitlistEl) {
+        waitlistEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
+
   // ── Char count colour ─────────────────────────────────────────────────────
   const charCountColor = (count: number) => {
     if (count >= 280) return "text-red-500";
@@ -354,10 +370,10 @@ export default function QuickCompose() {
 
   // ── Scroll into view when preview appears ────────────────────────────────
   useEffect(() => {
-    if (preview && previewRef.current) {
-      previewRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [preview]);
+      if (preview && previewRef.current) {
+        previewRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, [preview]);
 
   // ── Autofocus on mount ───────────────────────────────────────────────────
   useEffect(() => {
@@ -626,17 +642,12 @@ export default function QuickCompose() {
                   "Save to workspace \u2192"
                 )}
               </button>
-                      <button
-            onClick={() => {
-              if (preview?.twitter) {
-                const url = buildTwitterIntentUrl(preview.twitter);
-                window.open(url, "_blank", "noopener,noreferrer");
-              }
-            }}
-            className="ml-2 min-h-[44px] sm:h-[30px] px-4 text-[12px] rounded-[6px] bg-[#1da1f2] text-white hover:bg-[#1a91da] transition-colors font-[500] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-          >
-            Post now!
-          </button>
+                              <button
+          onClick={handlePostNow}
+          className="ml-2 min-h-[44px] sm:h-[30px] px-4 text-[12px] rounded-[6px] bg-[#1da1f2] text-white hover:bg-[#1a91da] transition-colors font-[500] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+        >
+          Post now!
+        </button>
         </div>
           </div>
 
@@ -647,12 +658,12 @@ export default function QuickCompose() {
               setTimeout(() => localStorage.setItem("tb_gen_seen", "1"), 100);
               return (
                 <p className="mt-4 text-[12px] text-gray-400 leading-relaxed animate-fade-up">
-                  Like it? Save it to your workspace and schedule it.{" "}
+                  Like it?{" "}
                   <button
                     onClick={handleSave}
                     className="text-gray-600 hover:text-gray-900 underline transition-colors"
                   >
-                    \u2192
+                    Save it to your workspace and schedule it.
                   </button>
                 </p>
               );
@@ -662,7 +673,7 @@ export default function QuickCompose() {
         </div>
       )}
 
-      {/* ── SIGN-IN PROMPT OVERLAY ────────────────────────────────────── */}
+        {/* ── SIGN-IN PROMPT OVERLAY ────────────────────────────────────── */}
       {showSignInPrompt && !isGenerating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -704,7 +715,7 @@ export default function QuickCompose() {
                 onClick={handleSave}
                 className="w-full h-[38px] rounded-[6px] bg-[#111] text-white text-[13px] font-[500] hover:bg-[#222] transition-colors"
               >
-                Sign in free \u2192
+                Sign in free
               </button>
               <button
                 onClick={() => setShowSignInPrompt(false)}

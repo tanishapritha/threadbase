@@ -1,6 +1,6 @@
 import QuickCompose from "@/components/compose/QuickCompose";
 import Link from "next/link";
-import { TwitterShareButton } from "./components/TwitterShareButton";
+import WaitlistSection from "@/components/WaitlistSection";
 export const metadata = {
   title: "ThreadBase — Turn ideas into posts.",
   description: "Write for Twitter and LinkedIn. AI that sounds like you. Review before it posts.",
@@ -76,9 +76,9 @@ export default function LandingPage() {
                 Turn thoughts <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">into threads.</span>
               </h1>
-              
+
               <p className="mt-6 text-lg md:text-xl text-white/50 leading-relaxed font-light max-w-lg">
-                The premium workspace for creators. Draft ideas, let AI refine them in your voice, and schedule across X and LinkedIn seamlessly.
+                The ultimate workspace for creators. Draft ideas, let AI refine them in your voice, and schedule across X and LinkedIn seamlessly.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
@@ -88,7 +88,7 @@ export default function LandingPage() {
                 >
                   Start writing for free
                 </Link>
-                
+
                 <div className="flex items-center gap-4 text-white/40 text-sm font-medium">
                   <span className="flex items-center gap-2">
                     <TwitterIcon /> Twitter
@@ -161,11 +161,16 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── WAITLIST CTA ─────────────────────────────────────────────────── */}
+        <section className="w-full max-w-7xl mx-auto px-6 md:px-12 py-24">
+          <WaitlistSection />
+        </section>
+
         {/* ── INTEGRATIONS ─────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 md:px-12 py-24">
           <div className="rounded-[32px] bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-10 md:p-20 text-center">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-8">
-              Post everywhere. <br/> Manage from one place.
+              Post everywhere. <br /> Manage from one place.
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <div className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-[#111] border border-white/10 shadow-xl">
