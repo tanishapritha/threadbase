@@ -10,11 +10,21 @@ export async function ensureUserExists(
   name: string
 ) {
   // Check if user already exists
-  const { data: existing } = await supabaseAdmin
+  if (!supabaseAdmin) {
+    console.warn('[ensureUserExists] Supabase admin not configured');
+    return;
+  }
+
+  const { data: existing, error: fetchError } = await supabaseAdmin
     .from("users")
     .select("id")
     .eq("id", clerkUserId)
-    .single();
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error("[ensureUserExists] Error fetching existing user:", fetchError);
+    // Don't return here, attempt to insert/upsert anyway as a fallback
+  }
 
   if (existing) {
     // Already bootstrapped
@@ -26,18 +36,23 @@ export async function ensureUserExists(
 
   console.log("[ensureUserExists] Creating user + workspace for", clerkUserId);
 
-  // 1. Create user record
+  // 1. Create user record (use upsert to be safe)
   const { error: userError } = await supabaseAdmin
     .from("users")
-    .insert({
+    .upsert({
       id: clerkUserId,
       email: email || "unknown@threadbase.app",
       name: name || "User",
       created_at: now,
-    });
+    }, { onConflict: 'id', ignoreDuplicates: true });
 
   if (userError) {
-    console.error("[ensureUserExists] Failed to create user:", userError);
+    console.error("[ensureUserExists] Failed to create user:", {
+      message: userError.message,
+      code: userError.code,
+      details: userError.details,
+      hint: userError.hint,
+    });
     return;
   }
 
