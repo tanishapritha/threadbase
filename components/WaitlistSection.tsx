@@ -52,7 +52,6 @@ export default function LoginAndJoinWaitlist() {
               mode="modal"
               forceRedirectUrl="/dashboard"
               fallbackRedirectUrl="/dashboard"
-              className="px-6 py-3 bg-[#1da1f2] text-white rounded-md hover:bg-[#1a91da] transition-colors"
             >
               Login / Join Waitlist →
             </SignInButton>

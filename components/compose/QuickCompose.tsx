@@ -117,7 +117,7 @@ export default function QuickCompose() {
   const previewRef = useRef<HTMLDivElement>(null);
   const editRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
-  const waitlistRef = useRef<HTMLDivElement>(null);
+
 
   // ── Auto-resize textarea ─────────────────────────────────────────────────
   const autoResize = useCallback(() => {

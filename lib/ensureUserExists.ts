@@ -4,14 +4,35 @@
 
 import { supabaseAdmin } from "./supabaseAdmin";
 
+const bootstrapSkippedUsers = new Set<string>();
+
+function isSupabaseConnectivityError(err: {
+  message?: string;
+  details?: string;
+  code?: string;
+} | null | undefined) {
+  const haystack = `${err?.message ?? ""}\n${err?.details ?? ""}`.toLowerCase();
+  return (
+    haystack.includes("fetch failed") ||
+    haystack.includes("enotfound") ||
+    haystack.includes("getaddrinfo") ||
+    haystack.includes("network")
+  );
+}
+
 export async function ensureUserExists(
   clerkUserId: string,
   email: string,
   name: string
 ) {
+  if (bootstrapSkippedUsers.has(clerkUserId)) {
+    return;
+  }
+
   // Check if user already exists
   if (!supabaseAdmin) {
     console.warn('[ensureUserExists] Supabase admin not configured');
+    bootstrapSkippedUsers.add(clerkUserId);
     return;
   }
 
@@ -22,8 +43,14 @@ export async function ensureUserExists(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[ensureUserExists] Error fetching existing user:", fetchError);
-    // Don't return here, attempt to insert/upsert anyway as a fallback
+    if (isSupabaseConnectivityError(fetchError)) {
+      console.warn("[ensureUserExists] Supabase unreachable, skipping bootstrap for now");
+      bootstrapSkippedUsers.add(clerkUserId);
+      return;
+    }
+
+    console.warn("[ensureUserExists] Error fetching existing user:", fetchError.message);
+    return;
   }
 
   if (existing) {
@@ -47,12 +74,13 @@ export async function ensureUserExists(
     }, { onConflict: 'id', ignoreDuplicates: true });
 
   if (userError) {
-    console.error("[ensureUserExists] Failed to create user:", {
-      message: userError.message,
-      code: userError.code,
-      details: userError.details,
-      hint: userError.hint,
-    });
+    if (isSupabaseConnectivityError(userError)) {
+      console.warn("[ensureUserExists] Supabase unreachable while creating user");
+      bootstrapSkippedUsers.add(clerkUserId);
+      return;
+    }
+
+    console.warn("[ensureUserExists] Failed to create user:", userError.message);
     return;
   }
 
@@ -75,7 +103,13 @@ export async function ensureUserExists(
     });
 
   if (workspaceError) {
-    console.error("[ensureUserExists] Failed to create workspace:", workspaceError);
+    if (isSupabaseConnectivityError(workspaceError)) {
+      console.warn("[ensureUserExists] Supabase unreachable while creating workspace");
+      bootstrapSkippedUsers.add(clerkUserId);
+      return;
+    }
+
+    console.warn("[ensureUserExists] Failed to create workspace:", workspaceError.message);
     return;
   }
 
@@ -90,9 +124,9 @@ export async function ensureUserExists(
     });
 
   if (memberError) {
-    console.error(
+    console.warn(
       "[ensureUserExists] Failed to create workspace member:",
-      memberError
+      memberError.message
     );
     return;
   }
@@ -108,9 +142,9 @@ export async function ensureUserExists(
     });
 
   if (prefsError) {
-    console.error(
+    console.warn(
       "[ensureUserExists] Failed to create preferences:",
-      prefsError
+      prefsError.message
     );
     return;
   }

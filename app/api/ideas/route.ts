@@ -15,6 +15,10 @@ export async function GET() {
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 500 });
+    }
+
     const { data: ideas, error } = await supabaseAdmin
       .from("ideas")
       .select("*")
@@ -45,6 +49,10 @@ export async function POST(req: Request) {
     const workspaceId = await getWorkspaceId(userId);
     if (!workspaceId) {
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 500 });
     }
 
     const body = await req.json();

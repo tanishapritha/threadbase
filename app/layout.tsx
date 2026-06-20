@@ -1,8 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import './globals.css';
-
-
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
   title: "ThreadBase",
@@ -25,6 +24,7 @@ export default function RootLayout({
       >
         <body className="min-h-full font-sans">
           {children}
+          <Analytics />
         </body>
       </ClerkProvider>
     </html>

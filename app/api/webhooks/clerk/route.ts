@@ -93,6 +93,14 @@ export async function POST(req: Request) {
   console.log("[WEBHOOK] Bootstrapping user:", { clerkUserId, email, name });
 
   try {
+    if (!supabaseAdmin) {
+      console.error("[WEBHOOK] Database not configured (supabaseAdmin is null)");
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 500 }
+      );
+    }
+
     // ── Step 1: Upsert user ───────────────────────────────────────────
     const { error: userError } = await supabaseAdmin
       .from("users")

@@ -7,15 +7,24 @@ import { supabaseAdmin } from "./supabaseAdmin";
 export async function getWorkspaceId(
   clerkUserId: string
 ): Promise<string | null> {
+  if (!supabaseAdmin) {
+    throw new Error("Supabase admin not configured");
+  }
+
   const { data, error } = await supabaseAdmin
     .from("workspace_members")
     .select("workspace_id")
     .eq("user_id", clerkUserId)
-    .eq("role", "owner")
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
-  if (error || !data) {
-    console.error("[getWorkspaceId] Failed for user", clerkUserId, error);
+  if (error) {
+    console.error("[getWorkspaceId] Lookup failed for user", clerkUserId, error);
+    throw new Error("Failed to resolve workspace");
+  }
+
+  if (!data) {
     return null;
   }
 

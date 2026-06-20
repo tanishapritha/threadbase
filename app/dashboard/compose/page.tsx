@@ -24,7 +24,7 @@ export default function ComposePage() {
 
   // Load idea if passed via query param
   useEffect(() => {
-    const idea = searchParams.get('idea');
+    const idea = searchParams?.get('idea');
     if (idea) {
       fetch(`/api/ideas`).then(r => r.json()).then(data => {
         const items = data.ideas || [];
@@ -62,13 +62,15 @@ export default function ComposePage() {
         body: JSON.stringify({ rawIdea, tone }),
       });
 
-      if (!res.ok) throw new Error("Failed to generate");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
       setFormattedContent(data);
       showToast("Content generated successfully", "success");
     } catch (error) {
       console.error(error);
-      showToast("Error generating post. Check your API keys and try again.", "error");
+      const message =
+        error instanceof Error ? error.message : "Error generating post. Try again.";
+      showToast(message, "error");
     } finally {
       setIsGenerating(false);
     }

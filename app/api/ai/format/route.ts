@@ -41,7 +41,7 @@ Respond ONLY with a valid JSON object in the exact following format:
             content: rawIdea
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 600,
         response_format: { type: "json_object" }
       }),
     });
@@ -49,7 +49,28 @@ Respond ONLY with a valid JSON object in the exact following format:
     if (!response.ok) {
       const errText = await response.text();
       console.error("OpenRouter error:", errText);
-      return NextResponse.json({ error: "Failed to generate AI response" }, { status: 500 });
+
+      let userMessage = "Failed to generate AI response";
+      try {
+        const parsed = JSON.parse(errText) as {
+          error?: { message?: string; code?: number };
+        };
+        const code = parsed.error?.code;
+        const message = parsed.error?.message ?? "";
+
+        if (code === 402 || message.toLowerCase().includes("credit")) {
+          userMessage =
+            "OpenRouter credits are too low. Add credits at openrouter.ai/settings/credits or reduce usage.";
+        } else if (code === 401) {
+          userMessage = "Invalid OpenRouter API key. Check OPENROUTER_API_KEY in your env.";
+        } else if (message) {
+          userMessage = message;
+        }
+      } catch {
+        // keep default message
+      }
+
+      return NextResponse.json({ error: userMessage }, { status: response.status === 402 ? 402 : 500 });
     }
 
     const data = await response.json();

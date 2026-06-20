@@ -27,7 +27,7 @@ export default function DashboardContent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
-  const showWelcome = searchParams.get("welcome") === "1";
+  const showWelcome = searchParams?.get("welcome") === "1";
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,7 @@ export default function DashboardContent({
 
   const fetchPosts = useCallback(async () => {
     try {
-      const res = await fetch("/api/posts/list");
+      const res = await fetch("/api/posts");
       if (!res.ok) return;
       const data = await res.json();
       setPosts(data.posts || []);
@@ -55,7 +55,7 @@ export default function DashboardContent({
 
   const dismissWelcome = () => {
     setWelcomeDismissed(true);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
     params.delete("welcome");
     router.replace(`/dashboard${params.toString() ? `?${params.toString()}` : ""}`);
   };

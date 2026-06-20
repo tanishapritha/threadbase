@@ -5,7 +5,7 @@ import { getWorkspaceId } from "@/lib/getWorkspaceId";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -18,7 +18,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
-    const postId = params.id;
+    const { id: postId } = await params;
+
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 500 });
+    }
 
     // Verify the post belongs to this workspace
     const { data: existing } = await supabaseAdmin
@@ -68,7 +72,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -81,7 +85,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
-    const postId = params.id;
+    const { id: postId } = await params;
+
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 500 });
+    }
 
     // Soft delete: set deleted_at
     const { error } = await supabaseAdmin

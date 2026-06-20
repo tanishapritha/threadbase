@@ -10,6 +10,11 @@ export const sendScheduledPostEmail = task({
   id: "send-scheduled-post-email",
   maxDuration: 300,
   run: async (payload: { postId: string }) => {
+    if (!supabaseAdmin) {
+      console.warn('Supabase admin not configured');
+      return { success: false, emailSentTo: '' };
+    }
+
     // 1. Fetch post from Supabase (with workspace owner)
     const { data: post, error: postError } = await supabaseAdmin
       .from("posts")

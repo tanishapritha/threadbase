@@ -8,9 +8,15 @@ interface PostPageProps {
 
 /** Shared helper: fetch post + workspace + user via multi-step Supabase queries. */
 async function fetchPostWithUser(postId: string) {
-  const { data: post } = await supabaseAdmin
+  if (!supabaseAdmin) {
+  console.warn('Supabase admin not configured');
+  return null;
+}
+
+    const { data: post } = await supabaseAdmin
     .from("posts")
     .select(`
+
       id,
       raw_idea,
       formatted_content,
