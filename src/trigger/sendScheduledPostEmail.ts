@@ -1,5 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**
@@ -47,9 +47,15 @@ export const sendScheduledPostEmail = task({
       post.raw_idea ??
       "";
 
-    // 5. Send email via Resend
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+    // 5. Send email via Resend (if configured)
+    const resendClient = getResend();
+    if (!resendClient) {
+      console.warn('Resend not configured — skipping email reminder');
+      return { success: false, emailSentTo: '' };
+    }
+
+    await resendClient.emails.send({
+      from: process.env.RESEND_FROM_EMAIL ?? "noreply@threadbase.app",
       to: user.email,
       subject: "Your Threadbase post is ready to go live",
       html: buildEmailHtml({
